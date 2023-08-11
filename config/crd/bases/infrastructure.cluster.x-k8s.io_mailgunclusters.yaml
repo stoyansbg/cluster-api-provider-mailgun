@@ -43,13 +43,17 @@ spec:
               requester:
                 description: Requester is the email of the person sending the request
                 type: string
+            required:
+            - priority
+            - request
+            - requester
             type: object
           status:
             description: MailgunClusterStatus defines the observed state of MailgunCluster
             properties:
               response:
-                description: MessageID is set to the message ID from Mailgun when our
-                  message has been sent
+                description: MessageID is set to the message ID from Mailgun when
+                  our message has been sent
                 type: string
             required:
             - response
