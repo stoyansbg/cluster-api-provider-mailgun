@@ -24,6 +24,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"github.com/mailgun/mailgun-go"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -86,6 +87,36 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
+	}
+
+	domain := os.Getenv("MAILGUN_DOMAIN")
+	if domain == "" {
+		setupLog.Info("missing required env MAILGUN_DOMAIN")
+		os.Exit(1)
+	}
+
+	apiKey := os.Getenv("MAILGUN_API_KEY")
+	if apiKey == "" {
+		setupLog.Info("missing required env MAILGUN_API_KEY")
+		os.Exit(1)
+	}
+
+	recipient := os.Getenv("MAIL_RECIPIENT")
+	if recipient == "" {
+		setupLog.Info("missing required env MAIL_RECIPIENT")
+		os.Exit(1)
+	}
+
+	mg := mailgun.NewMailgun(domain, apiKey)
+
+	if err = (&controller.MailgunClusterReconciler{
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("MailgunCluster"),
+		Mailgun:   mg,
+		Recipient: recipient,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "MailgunCluster")
 		os.Exit(1)
 	}
 
